@@ -1,0 +1,106 @@
+name: Workflow
+
+on:
+  # Run on pushes to main..
+  push:
+    branches:
+      - main
+  # ..and any pull request.
+  pull_request:
+
+# Cancel any in progress run of the workflow for a given PR
+# This avoids building outdated code
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check-for-sh:
+    name: Check for .sh
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: "echo '*** Do not write .sh scripts! ***'; ! find . -type f -name '*.sh' | grep ."
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+      - run: yarn
+      - run: yarn typecheck
+      - run: yarn format:check
+      - run: yarn lint
+  knip:
+    name: Knip
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+      - run: yarn
+      - run: yarn knip
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+      - run: yarn
+      - run: yarn test:ci
+      # - name: Upload Coverage Report
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     path: coverage/lcov-report
+      # - name: 'Upload coverage to Codecov'
+      #   uses: codecov/codecov-action@v3
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main'
+    needs:
+      - lint
+      - knip
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      # Repo needs to be given access to the MAINNET_SERVICE_ACCOUNT_KEY secret to access the slack webhook
+      # https://github.com/organizations/valora-inc/settings/secrets/actions/MAINNET_SERVICE_ACCOUNT_KEY
+      - uses: google-github-actions/auth@v2
+        with:
+          project_id: celo-mobile-mainnet
+          credentials_json: ${{ secrets.MAINNET_SERVICE_ACCOUNT_KEY }}
+      - name: Fetch Secrets
+        id: slack-webhook
+        uses: google-github-actions/get-secretmanager-secrets@v2.1.0
+        with:
+          # This can point to any slack webhook URL stored in GC Secret Manager
+          secrets: |-
+            SLACK_WEBHOOK_URL:projects/1027349420744/secrets/SLACK_ONCALL_WEBHOOK_URL
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: 'package.json'
+          check-latest: true
+      - run: yarn
+      - run: yarn deploy
+      - uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          notification_title: '{workflow} has {status_message}'
+          message_format: '{emoji} *{workflow}* {status_message}. <{run_url}|View Run>'
+          footer: 'Repo: <{repo_url}|{repo}>'
+          notify_when: 'failure'
+          # Tag @supporthero on failures, can change to any slack group id
+          mention_groups: 'S0277QUM4KB'
+          mention_groups_when: 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ steps.slack-webhook.outputs.SLACK_WEBHOOK_URL }}
