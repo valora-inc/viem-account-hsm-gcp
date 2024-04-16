@@ -1,13 +1,6 @@
 import { KeyManagementServiceClient } from '@google-cloud/kms'
 import * as asn1 from 'asn1js'
-import {
-  LocalAccount,
-  publicKeyToAddress,
-  // privateKeyToAccount,
-  toAccount,
-} from 'viem/accounts'
-// TODO remove if possible
-// TODO remove if possible
+import { LocalAccount, publicKeyToAddress, toAccount } from 'viem/accounts'
 import {
   GetTransactionType,
   Hex,
@@ -15,15 +8,17 @@ import {
   Signature,
   TransactionSerializable,
   TransactionSerialized,
+  hexToBigInt,
+  hexToBytes,
   keccak256,
   serializeTransaction,
   toHex,
 } from 'viem'
-// TODO remove if possible
-import BigNumber from 'bignumber.js'
-import * as ethUtil from '@ethereumjs/util'
 import { secp256k1 } from '@noble/curves/secp256k1'
-import { SignatureType } from '@noble/curves/abstract/weierstrass'
+import {
+  RecoveredSignatureType,
+  SignatureType,
+} from '@noble/curves/abstract/weierstrass'
 
 export type GcpHsmAccount = LocalAccount<'gcpHsm'>
 
@@ -32,13 +27,6 @@ async function getPublicKey(
   hsmKeyVersion: string,
 ): Promise<Hex> {
   const [pk] = await kmsClient.getPublicKey({ name: hsmKeyVersion })
-  // if (
-  //   pk.algorithm !==
-  //   protos.google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm
-  //     .EC_SIGN_SECP256K1_SHA256
-  // ) {
-  //   throw new Error(`Unsupported algorithm: ${pk.algorithm}`)
-  // }
   if (!pk.pem) {
     throw new Error('PublicKey pem is not defined')
   }
@@ -68,193 +56,83 @@ function publicKeyFromAsn1(b: Buffer): Hex {
   return toHex(value.valueBlock.valueHexView)
 }
 
-///////
+async function signWithKms(
+  kmsClient: KeyManagementServiceClient,
+  hsmKeyVersion: string,
+  hash: Uint8Array,
+): Promise<SignatureType> {
+  const [signResponse] = await kmsClient.asymmetricSign({
+    name: hsmKeyVersion,
+    digest: {
+      sha256: hash,
+    },
+  })
 
-const toArrayBuffer = (b: Buffer): ArrayBuffer => {
-  return b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength)
+  // Return normalized signature
+  // > All transaction signatures whose s-value is greater than secp256k1n/2 are now considered invalid.
+  // See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
+  return secp256k1.Signature.fromDER(
+    signResponse.signature as Buffer,
+  ).normalizeS()
 }
-
-/**
- * AWS returns DER encoded signatures but DER is valid BER
- */
-export function parseBERSignature(b: Buffer): { r: Buffer; s: Buffer } {
-  const { result } = asn1.fromBER(toArrayBuffer(b))
-
-  const parts = (result as asn1.Sequence).valueBlock.value as asn1.BitString[]
-  if (parts.length < 2) {
-    throw new Error('Invalid signature parsed')
-  }
-  const [part1, part2] = parts
-
-  return {
-    r: Buffer.from(part1.valueBlock.valueHex),
-    s: Buffer.from(part2.valueBlock.valueHex),
-  }
-}
-
-type StrongAddress = `0x${string}`
-
-const ensureLeading0x = (input: string): StrongAddress =>
-  input.startsWith('0x') ? (input as StrongAddress) : (`0x${input}` as const)
-
-const bufferToBigNumber = (input: Buffer): BigNumber => {
-  return new BigNumber(ensureLeading0x(input.toString('hex')))
-}
-
-const bigNumberToBuffer = (input: BigNumber, lengthInBytes: number): Buffer => {
-  let hex = input.toString(16)
-  const hexLength = lengthInBytes * 2 // 2 hex characters per byte.
-  if (hex.length < hexLength) {
-    hex = '0'.repeat(hexLength - hex.length) + hex
-  }
-  return ethUtil.toBuffer(ensureLeading0x(hex)) as Buffer
-}
-
-/**
- * If the signature is in the "bottom" of the curve, it is non-canonical
- * Non-canonical signatures are illegal in Ethereum and therefore the S value
- * must be transposed to the lower intersection
- * https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#Low_S_values_in_signatures
- */
-export const makeCanonical = (S: BigNumber): BigNumber => {
-  const curveN = new BigNumber(secp256k1.CURVE.n.toString())
-  const isCanonical = S.comparedTo(curveN.dividedBy(2)) <= 0
-  if (!isCanonical) {
-    return curveN.minus(S)
-  }
-  return S
-}
-
-const thirtyTwo: number = 32
-const sixtyFour: number = 64
-
-// class Signature {
-//   public v: number
-//   public r: Buffer
-//   public s: Buffer
-
-//   constructor(v: number, r: Buffer, s: Buffer) {
-//     this.v = v
-//     this.r = r
-//     this.s = s
-//   }
-// }
 
 /**
  * Attempts each recovery key to find a match
  */
-export function recoverKeyIndex(
-  signature: Uint8Array,
-  _publicKey: BigNumber,
+async function getRecoveredSignature(
+  signature: SignatureType,
+  publicKey: Hex,
   hash: Uint8Array,
-): number {
-  const formats = ['fromCompact', 'fromDER'] as const
+): Promise<RecoveredSignatureType> {
+  const publicKeyBigInt = hexToBigInt(publicKey)
 
-  for (let format of formats) {
-    let sig: SignatureType
-    try {
-      sig = secp256k1.Signature[format](signature)
-    } catch (e) {
-      continue
-    }
+  for (let i = 0; i < 4; i++) {
+    const recoveredSig = signature.addRecoveryBit(i)
+    const recoveredPublicKey = recoveredSig.recoverPublicKey(hash)
 
-    for (let i = 0; i < 4; i++) {
-      sig = sig.addRecoveryBit(i)
-      const recoveredPublicKeyByteArr = sig.recoverPublicKey(hash)
+    // NOTE:
+    // converting hex value to bigint allows for discrepancies between
+    // libraries to disappear, ran into an issue where
+    // "0x01234" wasn't equal to "0x1234", the conversion removes it
+    const compressedRecoveredPublicKey = hexToBigInt(
+      `0x${recoveredPublicKey.toHex(false)}`,
+    )
+    const uncompressedRecoveredPublicKey = hexToBigInt(
+      `0x${recoveredPublicKey.toHex(true)}`,
+    )
 
-      // NOTE:
-      // converting hex value to bigint allows for discrepencies between
-      // libraries to disappear, ran into an issue where
-      // "0x01234" wasn't equal to "0x1234", the conversion removes it
-      const compressedRecoveredPublicKey = BigInt(
-        ensureLeading0x(recoveredPublicKeyByteArr.toHex(false)),
-      )
-      const uncompressedRecoveredPublicKey = BigInt(
-        ensureLeading0x(recoveredPublicKeyByteArr.toHex(true)),
-      )
-      const publicKey = BigInt(ensureLeading0x(_publicKey.toString(16)))
-
-      if (
-        publicKey === compressedRecoveredPublicKey ||
-        publicKey === uncompressedRecoveredPublicKey
-      ) {
-        return i
-      }
+    if (
+      publicKeyBigInt === compressedRecoveredPublicKey ||
+      publicKeyBigInt === uncompressedRecoveredPublicKey
+    ) {
+      return recoveredSig
     }
   }
 
   throw new Error('Unable to generate recovery key from signature.')
 }
 
-const trimLeading0x = (input: string) =>
-  input.startsWith('0x') ? input.slice(2) : input
-
-/////
-
-async function findCanonicalSignature(
-  kmsClient: KeyManagementServiceClient,
-  hsmKeyVersion: string,
-  buffer: Buffer,
-): Promise<{ S: BigNumber; R: BigNumber }> {
-  const [signResponse] = await kmsClient.asymmetricSign({
-    name: hsmKeyVersion,
-    digest: {
-      sha256: buffer,
-    },
-  })
-  const { r, s } = parseBERSignature(signResponse.signature as Buffer)
-
-  const R = bufferToBigNumber(r)
-  let S = bufferToBigNumber(s)
-  S = makeCanonical(S)
-
-  return { S: S!, R: R! }
-}
-
 async function sign(
   kmsClient: KeyManagementServiceClient,
   hsmKeyVersion: string,
-  publicKey: BigNumber,
-  buffer: Buffer,
+  publicKey: Hex,
+  msgHash: Hex,
 ): Promise<Signature> {
-  const { R, S } = await findCanonicalSignature(
-    kmsClient,
-    hsmKeyVersion,
-    buffer,
-  )
-  const rBuff = bigNumberToBuffer(R, thirtyTwo)
-  const sBuff = bigNumberToBuffer(S, thirtyTwo)
-  const recovery = recoverKeyIndex(
-    Buffer.concat([rBuff, sBuff], sixtyFour),
+  const hash = hexToBytes(msgHash)
+  const signature = await signWithKms(kmsClient, hsmKeyVersion, hash)
+  const { r, s, recovery } = await getRecoveredSignature(
+    signature,
     publicKey,
-    buffer,
+    hash,
   )
-
-  // old
-  // return {
-  //   r: rBuff,
-  //   s: sBuff,
-  //   v: recoveryParam,
-  // }
+  console.log('==recovery', recovery)
   return {
-    r: toHex(rBuff),
-    s: toHex(sBuff),
-    v: recovery ? BigInt(28) : BigInt(27),
+    r: toHex(r),
+    s: toHex(s),
+    v: BigInt(recovery + 27),
     yParity: recovery,
   }
 }
-
-// async function signTransaction(addToV: number, encodedTx: RLPEncodedTx): Promise<Signature> {
-//   const hash = getHashFromEncoded(encodedTx.rlpEncode)
-//   const bufferedMessage = Buffer.from(trimLeading0x(hash), 'hex')
-//   const { v, r, s } = await this.sign(bufferedMessage)
-
-//   return {
-//     v: v + addToV,
-//     r,
-//     s,
-//   }
-// }
 
 type SignTransactionParameters<
   serializer extends
@@ -263,7 +141,7 @@ type SignTransactionParameters<
 > = {
   kmsClient: KeyManagementServiceClient
   hsmKeyVersion: string
-  publicKey: BigNumber
+  publicKey: Hex
   transaction: transaction
   serializer?: serializer | undefined
 }
@@ -301,18 +179,7 @@ async function signTransaction<
   })()
 
   const hash = keccak256(serializer(signableTransaction))
-
-  // const signature = await sign({
-  //   hash,
-  //   privateKey,
-  // })
-
-  const signature = await sign(
-    kmsClient,
-    hsmKeyVersion,
-    publicKey,
-    Buffer.from(trimLeading0x(hash), 'hex'),
-  )
+  const signature = await sign(kmsClient, hsmKeyVersion, publicKey, hash)
 
   return serializer(transaction, signature) as SignTransactionReturnType<
     serializer,
@@ -360,9 +227,6 @@ export async function gcpHsmToAccount(
 ): Promise<GcpHsmAccount> {
   const kmsClient = new KeyManagementServiceClient()
   const publicKey = await getPublicKey(kmsClient, hsmKeyVersion)
-
-  const publicKeyBigNumber = new BigNumber(publicKey)
-
   const address = publicKeyToAddress(publicKey)
 
   const account = toAccount({
@@ -375,7 +239,7 @@ export async function gcpHsmToAccount(
       return signTransaction({
         kmsClient,
         hsmKeyVersion,
-        publicKey: publicKeyBigNumber,
+        publicKey,
         transaction,
         serializer,
       })

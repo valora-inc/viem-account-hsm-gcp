@@ -71,7 +71,7 @@ async function getContractKit({
   console.log('Hash:', hash)
 
   const receipt = await client.waitForTransactionReceipt({ hash })
-  console.log('Receipt:', receipt)
+  console.log('TX status:', receipt.status)
 
   if (receipt.status !== 'success') {
     throw new Error('Transaction failed!')
