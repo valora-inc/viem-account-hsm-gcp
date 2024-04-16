@@ -5,13 +5,19 @@ import {
   GetTransactionType,
   Hex,
   SerializeTransactionFn,
+  SignableMessage,
   Signature,
   TransactionSerializable,
   TransactionSerialized,
+  TypedData,
+  TypedDataDefinition,
+  hashMessage,
+  hashTypedData,
   hexToBigInt,
   hexToBytes,
   keccak256,
   serializeTransaction,
+  signatureToHex,
   toHex,
 } from 'viem'
 import { secp256k1 } from '@noble/curves/secp256k1'
@@ -68,6 +74,10 @@ async function signWithKms(
     },
   })
 
+  console.log("==fromDERSignature==", secp256k1.Signature.fromDER(
+    signResponse.signature as Buffer,
+  ))
+
   // Return normalized signature
   // > All transaction signatures whose s-value is greater than secp256k1n/2 are now considered invalid.
   // See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
@@ -89,6 +99,7 @@ async function getRecoveredSignature(
   for (let i = 0; i < 4; i++) {
     const recoveredSig = signature.addRecoveryBit(i)
     const recoveredPublicKey = recoveredSig.recoverPublicKey(hash)
+    console.log("==recoveredPublicKey2==", i, recoveredPublicKey.toHex(false))
 
     // NOTE:
     // converting hex value to bigint allows for discrepancies between
@@ -125,7 +136,6 @@ async function sign(
     publicKey,
     hash,
   )
-  console.log('==recovery', recovery)
   return {
     r: toHex(r),
     s: toHex(s),
@@ -187,53 +197,68 @@ async function signTransaction<
   >
 }
 
-/*async function signTransaction(addToV: number, encodedTx: RLPEncodedTx): Promise<Signature> {
-  const hash = getHashFromEncoded(encodedTx.rlpEncode)
-  const bufferedMessage = Buffer.from(trimLeading0x(hash), 'hex')
-  const { v, r, s } = await this.sign(bufferedMessage)
-
-  return {
-    v: v + addToV,
-    r,
-    s,
-  }
+type SignMessageParameters = {
+  message: SignableMessage
+  kmsClient: KeyManagementServiceClient
+  hsmKeyVersion: string
+  publicKey: Hex
 }
 
-async function signPersonalMessage(data: string): Promise<Signature> {
-  const dataBuff = ethUtil.toBuffer(ensureLeading0x(data))
-  const msgHashBuff = ethUtil.hashPersonalMessage(dataBuff) as Buffer
-  const { v, r, s } = await this.sign(msgHashBuff)
-
-  return {
-    v: v + 27,
-    r,
-    s,
-  }
+async function signMessage({
+  message,
+  kmsClient,
+  hsmKeyVersion,
+  publicKey,
+}: SignMessageParameters): Promise<Hex> {
+  const signature = await sign(
+    kmsClient,
+    hsmKeyVersion,
+    publicKey,
+    hashMessage(message),
+  )
+  return signatureToHex(signature)
 }
 
-async function signTypedData(typedData: EIP712TypedData): Promise<Signature> {
-  const typedDataHashBuff = generateTypedDataHash(typedData)
-  const { v, r, s } = await this.sign(typedDataHashBuff)
+type SignTypedDataParameters<
+  typedData extends TypedData | Record<string, unknown> = TypedData,
+  primaryType extends keyof typedData | 'EIP712Domain' = keyof typedData,
+> = TypedDataDefinition<typedData, primaryType> & {
+  kmsClient: KeyManagementServiceClient
+  hsmKeyVersion: string
+  publicKey: Hex
+}
 
-  return {
-    v: v + 27,
-    r,
-    s,
-  }
-}*/
+async function signTypedData<
+  const typedData extends TypedData | Record<string, unknown>,
+  primaryType extends keyof typedData | 'EIP712Domain',
+>(parameters: SignTypedDataParameters<typedData, primaryType>): Promise<Hex> {
+  const { kmsClient, hsmKeyVersion, publicKey, ...typedData } =
+    parameters as unknown as SignTypedDataParameters
+  const signature = await sign(
+    kmsClient,
+    hsmKeyVersion,
+    publicKey,
+    hashTypedData(typedData),
+  )
+  return signatureToHex(signature)
+}
 
-export async function gcpHsmToAccount(
-  hsmKeyVersion: string,
-): Promise<GcpHsmAccount> {
-  const kmsClient = new KeyManagementServiceClient()
+export async function gcpHsmToAccount({
+  hsmKeyVersion,
+  kmsClient: kmsClient_,
+}: {
+  hsmKeyVersion: string
+  kmsClient?: KeyManagementServiceClient
+}): Promise<GcpHsmAccount> {
+  const kmsClient = kmsClient_ ?? new KeyManagementServiceClient()
   const publicKey = await getPublicKey(kmsClient, hsmKeyVersion)
+  console.log("==here publicKey==", publicKey)
   const address = publicKeyToAddress(publicKey)
 
   const account = toAccount({
     address,
     async signMessage({ message }) {
-      throw new Error('Not implemented')
-      // return signMessage({ message, privateKey })
+      return signMessage({ message, kmsClient, hsmKeyVersion, publicKey })
     },
     async signTransaction(transaction, { serializer } = {}) {
       return signTransaction({
@@ -245,8 +270,12 @@ export async function gcpHsmToAccount(
       })
     },
     async signTypedData(typedData) {
-      throw new Error('Not implemented')
-      // return signTypedData({ ...typedData, privateKey })
+      return signTypedData({
+        ...typedData,
+        kmsClient,
+        hsmKeyVersion,
+        publicKey,
+      })
     },
   })
 

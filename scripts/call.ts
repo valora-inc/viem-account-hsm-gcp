@@ -49,7 +49,7 @@ async function getContractKit({
   // const kit = await getContractKit({ rpcNodeUrl, hsmKeyVersion })
   // console.log('ContractKit Account:', kit.defaultAccount)
 
-  const viemHsmAccount = await gcpHsmToAccount(hsmKeyVersion)
+  const viemHsmAccount = await gcpHsmToAccount({ hsmKeyVersion })
   const { address } = viemHsmAccount
   console.log('Viem HSM Account:', address)
 
