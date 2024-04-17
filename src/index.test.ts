@@ -12,7 +12,7 @@ import {
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import * as asn1 from 'asn1js'
-import { GcpHsmAccount, gcpHsmToAccount } from './index'
+import { gcpHsmToAccount } from './index'
 
 const PRIVATE_KEY1 =
   '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
@@ -131,9 +131,15 @@ describe('gcpHsmToAccount', () => {
       hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
       kmsClient: mockKmsClient,
     })
-    expect(gcpHsmAccount.address).toBe(ACCOUNT1.address)
-    expect(gcpHsmAccount.type).toBe('local')
-    expect(gcpHsmAccount.source).toBe('gcpHsm')
+    expect(gcpHsmAccount).toEqual({
+      address: ACCOUNT1.address,
+      publicKey: ACCOUNT1.publicKey,
+      signMessage: expect.any(Function),
+      signTransaction: expect.any(Function),
+      signTypedData: expect.any(Function),
+      source: 'gcpHsm',
+      type: 'local',
+    })
   })
 
   it('throws an error when given an unknown hsm key', async () => {
@@ -145,69 +151,65 @@ describe('gcpHsmToAccount', () => {
     ).rejects.toThrow("Unable to locate key: 'an-unknown-key'")
   })
 
-  describe('with a valid hsm account', () => {
-    let gcpHsmAccount: GcpHsmAccount
-
-    beforeEach(async () => {
-      gcpHsmAccount = await gcpHsmToAccount({
-        hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
-        kmsClient: mockKmsClient,
-      })
+  it('signs a message', async () => {
+    const gcpHsmAccount = await gcpHsmToAccount({
+      hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
+      kmsClient: mockKmsClient,
     })
 
-    describe('signMessage', () => {
-      it('succeeds', async () => {
-        const message = 'hello world'
-        const signature = await gcpHsmAccount.signMessage({ message })
+    const message = 'hello world'
+    const signature = await gcpHsmAccount.signMessage({ message })
 
-        expect(signature).toBe(
-          '0x08c183d08a952dcd603148842de1d7844a1a6d72a3761840ebe10a570240821e3348c9296af823c8f4de5258f997fa35ee4ad8fce79cda929021f6976d0c10431c',
-        )
-        await expect(
-          verifyMessage({
-            address: ACCOUNT1.address,
-            message,
-            signature,
-          }),
-        ).resolves.toBeTruthy()
-      })
+    expect(signature).toBe(
+      '0x08c183d08a952dcd603148842de1d7844a1a6d72a3761840ebe10a570240821e3348c9296af823c8f4de5258f997fa35ee4ad8fce79cda929021f6976d0c10431c',
+    )
+    await expect(
+      verifyMessage({
+        address: ACCOUNT1.address,
+        message,
+        signature,
+      }),
+    ).resolves.toBeTruthy()
+  })
+
+  it('signs a transaction', async () => {
+    const gcpHsmAccount = await gcpHsmToAccount({
+      hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
+      kmsClient: mockKmsClient,
+    })
+    const signedTx = await gcpHsmAccount.signTransaction({
+      chainId: 1,
+      maxFeePerGas: parseGwei('20'),
+      gas: 21000n,
+      to: ACCOUNT2.address,
+      value: parseEther('1'),
     })
 
-    describe('signTransaction', () => {
-      it('succeeds', async () => {
-        const signedTx = await gcpHsmAccount.signTransaction({
-          chainId: 1,
-          maxFeePerGas: parseGwei('20'),
-          gas: 21000n,
-          to: ACCOUNT2.address,
-          value: parseEther('1'),
-        })
+    expect(signedTx).toBe(
+      '0x02f86f0180808504a817c80082520894588e4b68193001e4d10928660ab4165b813717c0880de0b6b3a764000080c080a045b0a758fd31e75c9f8558aa5eb2aee359693d781c2b2f8ef000d9bfefc8e3e7a004d6440b24582611c77b93113b5c6ac45d0ade91e8067ef8867a088e227be8d9',
+    )
+    await expect(
+      recoverTransactionAddress({
+        serializedTransaction: signedTx,
+      }),
+    ).resolves.toBe(ACCOUNT1.address)
+  })
 
-        expect(signedTx).toBe(
-          '0x02f86f0180808504a817c80082520894588e4b68193001e4d10928660ab4165b813717c0880de0b6b3a764000080c080a045b0a758fd31e75c9f8558aa5eb2aee359693d781c2b2f8ef000d9bfefc8e3e7a004d6440b24582611c77b93113b5c6ac45d0ade91e8067ef8867a088e227be8d9',
-        )
-        await expect(
-          recoverTransactionAddress({
-            serializedTransaction: signedTx,
-          }),
-        ).resolves.toBe(ACCOUNT1.address)
-      })
+  it('signs typed data', async () => {
+    const gcpHsmAccount = await gcpHsmToAccount({
+      hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
+      kmsClient: mockKmsClient,
     })
+    const signature = await gcpHsmAccount.signTypedData(TYPED_DATA)
+    expect(signature).toBe(
+      '0x51a454925c2ff4cad0a09cc64fc970685a17f39b2c3a843323f0cc08942d413d15e1ee8c7ff2e12e85eaf1f887cadfbb20b270a579f0945f30de2a73cad4d8ce1c',
+    )
 
-    describe('signTypedData', () => {
-      it('succeeds', async () => {
-        const signature = await gcpHsmAccount.signTypedData(TYPED_DATA)
-        expect(signature).toBe(
-          '0x51a454925c2ff4cad0a09cc64fc970685a17f39b2c3a843323f0cc08942d413d15e1ee8c7ff2e12e85eaf1f887cadfbb20b270a579f0945f30de2a73cad4d8ce1c',
-        )
-
-        await expect(
-          recoverTypedDataAddress({
-            ...TYPED_DATA,
-            signature,
-          }),
-        ).resolves.toBe(ACCOUNT1.address)
-      })
-    })
+    await expect(
+      recoverTypedDataAddress({
+        ...TYPED_DATA,
+        signature,
+      }),
+    ).resolves.toBe(ACCOUNT1.address)
   })
 })
