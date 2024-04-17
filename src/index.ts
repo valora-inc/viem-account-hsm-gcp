@@ -13,7 +13,6 @@ import {
   TypedDataDefinition,
   hashMessage,
   hashTypedData,
-  hexToBigInt,
   hexToBytes,
   keccak256,
   serializeTransaction,
@@ -27,6 +26,9 @@ import {
 } from '@noble/curves/abstract/weierstrass'
 
 export type GcpHsmAccount = LocalAccount<'gcpHsm'>
+
+// Including 0x prefix
+const UNCOMPRESSED_PUBLIC_KEY_HEX_LENGTH = 132 // 2 * 66
 
 async function getPublicKey(
   kmsClient: KeyManagementServiceClient,
@@ -52,8 +54,8 @@ function pemToDerEncode(pem: string): string {
   return pem.split('\n').slice(1, -2).join('').trim()
 }
 
-function publicKeyFromAsn1(b: Buffer): Hex {
-  const { result } = asn1.fromBER(b)
+function publicKeyFromAsn1(bytes: Uint8Array): Hex {
+  const { result } = asn1.fromBER(bytes)
   const values = (result as asn1.Sequence).valueBlock.value
   if (values.length < 2) {
     throw new Error('Cannot get public key from ASN.1: invalid sequence')
@@ -90,27 +92,12 @@ async function getRecoveredSignature(
   publicKey: Hex,
   hash: Uint8Array,
 ): Promise<RecoveredSignatureType> {
-  const publicKeyBigInt = hexToBigInt(publicKey)
-
+  console.log('publickey length', publicKey.length)
   for (let i = 0; i < 4; i++) {
     const recoveredSig = signature.addRecoveryBit(i)
-    const recoveredPublicKey = recoveredSig.recoverPublicKey(hash)
-
-    // NOTE:
-    // converting hex value to bigint allows for discrepancies between
-    // libraries to disappear, ran into an issue where
-    // "0x01234" wasn't equal to "0x1234", the conversion removes it
-    const compressedRecoveredPublicKey = hexToBigInt(
-      `0x${recoveredPublicKey.toHex(false)}`,
-    )
-    const uncompressedRecoveredPublicKey = hexToBigInt(
-      `0x${recoveredPublicKey.toHex(true)}`,
-    )
-
-    if (
-      publicKeyBigInt === compressedRecoveredPublicKey ||
-      publicKeyBigInt === uncompressedRecoveredPublicKey
-    ) {
+    const compressed = publicKey.length < UNCOMPRESSED_PUBLIC_KEY_HEX_LENGTH
+    const recoveredPublicKey = `0x${recoveredSig.recoverPublicKey(hash).toHex(compressed)}`
+    if (publicKey === recoveredPublicKey) {
       return recoveredSig
     }
   }

@@ -77,7 +77,7 @@ function asn1FromPublicKey(publicKey: Hex): Buffer {
     )
   }
   const value = values[1] as asn1.BitString
-  value.valueBlock.valueHex = hexToBytes(publicKey)
+  value.valueBlock.valueHexView = hexToBytes(publicKey)
   return Buffer.from(sequence.toBER(false))
 }
 
@@ -90,15 +90,10 @@ const mockKmsClient = {
 
     const pubKey = secp256k1.getPublicKey(privateKey.slice(2), false)
     const asn1Key = asn1FromPublicKey(toHex(pubKey))
-    const prefix = '-----BEGIN PUBLIC KEY-----\n'
-    const postfix = '-----END PUBLIC KEY-----\n'
-    const pem =
-      prefix +
-      asn1Key
-        .toString('base64')
-        .match(/.{0,64}/g)!
-        .join('\n') +
-      postfix
+    const pem = `-----BEGIN PUBLIC KEY-----\n${asn1Key
+      .toString('base64')
+      .match(/.{0,64}/g)!
+      .join('\n')}-----END PUBLIC KEY-----\n`
     return [{ pem }]
   },
   asymmetricSign: async ({
@@ -114,14 +109,8 @@ const mockKmsClient = {
     }
 
     const signature = secp256k1.sign(digest.sha256, privateKey.slice(2))
-    const signatureWithoutRecovery = new secp256k1.Signature(
-      signature.r,
-      signature.s,
-    )
 
-    return [
-      { signature: Buffer.from(signatureWithoutRecovery.toDERRawBytes()) },
-    ]
+    return [{ signature: signature.toDERRawBytes() }]
   },
 } as unknown as KeyManagementServiceClient
 
