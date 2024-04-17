@@ -74,10 +74,6 @@ async function signWithKms(
     },
   })
 
-  console.log("==fromDERSignature==", secp256k1.Signature.fromDER(
-    signResponse.signature as Buffer,
-  ))
-
   // Return normalized signature
   // > All transaction signatures whose s-value is greater than secp256k1n/2 are now considered invalid.
   // See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-2.md
@@ -99,7 +95,6 @@ async function getRecoveredSignature(
   for (let i = 0; i < 4; i++) {
     const recoveredSig = signature.addRecoveryBit(i)
     const recoveredPublicKey = recoveredSig.recoverPublicKey(hash)
-    console.log("==recoveredPublicKey2==", i, recoveredPublicKey.toHex(false))
 
     // NOTE:
     // converting hex value to bigint allows for discrepancies between
@@ -252,7 +247,6 @@ export async function gcpHsmToAccount({
 }): Promise<GcpHsmAccount> {
   const kmsClient = kmsClient_ ?? new KeyManagementServiceClient()
   const publicKey = await getPublicKey(kmsClient, hsmKeyVersion)
-  console.log("==here publicKey==", publicKey)
   const address = publicKeyToAddress(publicKey)
 
   const account = toAccount({

@@ -1,49 +1,27 @@
-// import { CeloTx, EncodedTransaction } from '@celo/connect'
-// import {
-//   // ensureLeading0x,
-//   // normalizeAddressWith0x,
-//   // privateKeyToAddress,
-//   // trimLeading0x,
-// } from '@celo/utils/lib/address'
-// import { verifySignature } from '@celo/utils/lib/signatureUtils'
-// import {
-//   recoverTransaction,
-//   verifyEIP712TypedDataSigner,
-// } from '@celo/wallet-base'
-// import { asn1FromPublicKey } from '@celo/wallet-hsm'
-import * as ethUtil from '@ethereumjs/util'
-// import { BigNumber } from 'bignumber.js'
-// NOTE: elliptic is disabled elsewhere in this library to prevent
-// accidental signing of truncated messages.
-// eslint-disable-next-line no-restricted-imports
-// import { ec as EC } from 'elliptic'
-// import Web3 from 'web3'
-
 import { KeyManagementServiceClient } from '@google-cloud/kms'
 import { secp256k1 } from '@noble/curves/secp256k1'
+import {
+  Hex,
+  hexToBytes,
+  parseEther,
+  parseGwei,
+  recoverTransactionAddress,
+  recoverTypedDataAddress,
+  toHex,
+  verifyMessage,
+} from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import * as asn1 from 'asn1js'
 import { GcpHsmAccount, gcpHsmToAccount } from './index'
-import { Hex, hexToBytes, toHex } from 'viem'
 
-// Note: A lot of this test class was copied from the wallet-hsm-aws test since they work very similarly.
-
-export const PRIVATE_KEY1 =
+const PRIVATE_KEY1 =
   '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
-export const ACCOUNT_ADDRESS1 = privateKeyToAccount(PRIVATE_KEY1).address
-export const ACCOUNT_PUBLIC_KEY1 = privateKeyToAccount(PRIVATE_KEY1).publicKey
-export const PRIVATE_KEY2 =
+const ACCOUNT1 = privateKeyToAccount(PRIVATE_KEY1)
+const PRIVATE_KEY2 =
   '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890fdeccc'
-export const ACCOUNT_ADDRESS2 = privateKeyToAccount(PRIVATE_KEY2).address
+const ACCOUNT2 = privateKeyToAccount(PRIVATE_KEY2)
 
-export const PRIVATE_KEY_NEVER =
-  '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890ffffff'
-export const ACCOUNT_ADDRESS_NEVER =
-  privateKeyToAccount(PRIVATE_KEY_NEVER).address
-
-export const CHAIN_ID = 44378
-
-export const TYPED_DATA = {
+const TYPED_DATA = {
   types: {
     EIP712Domain: [
       { name: 'name', type: 'string' },
@@ -65,7 +43,7 @@ export const TYPED_DATA = {
   domain: {
     name: 'Ether Mail',
     version: '1',
-    chainId: 1,
+    chainId: 1n,
     verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
   },
   message: {
@@ -79,47 +57,38 @@ export const TYPED_DATA = {
     },
     contents: 'Hello, Bob!',
   },
-}
+} as const
 
 const MOCK_GCP_HSM_KEY_NAME =
   'projects/gcp-test-account/locations/global/keyRings/test/cryptoKeys/hsm/cryptoKeyVersions/1'
 
-const key1 = PRIVATE_KEY1
-// const ec = new EC('secp256k1')
-
-const keys: Map<string, string> = new Map([[MOCK_GCP_HSM_KEY_NAME, key1]])
+const MOCK_KEYS: Map<string, string> = new Map([
+  [MOCK_GCP_HSM_KEY_NAME, PRIVATE_KEY1],
+])
 
 function asn1FromPublicKey(publicKey: Hex): Buffer {
-  // const pkbuff = bigNumberToBuffer(bn, 64)
   const sequence = new asn1.Sequence()
   const values = sequence.valueBlock.value
   for (const i of [0, 1]) {
     values.push(
       new asn1.Integer({
         value: i,
-      })
+      }),
     )
   }
   const value = values[1] as asn1.BitString
-  // Adding a dummy padding byte
-  // const padding = Buffer.from(new Uint8Array([0x00]))
-  value.valueBlock.valueHex = hexToBytes(publicKey) //Buffer.concat([padding, pkbuff])
+  value.valueBlock.valueHex = hexToBytes(publicKey)
   return Buffer.from(sequence.toBER(false))
 }
 
 const mockKmsClient = {
   getPublicKey: async ({ name: versionName }: { name: string }) => {
-    const privateKey = keys.get(versionName)
+    const privateKey = MOCK_KEYS.get(versionName)
     if (!privateKey) {
       throw new Error(`Unable to locate key: '${versionName}'`)
     }
-    
-    const ethUtilPubKey = ethUtil.privateToPublic(ethUtil.toBuffer(privateKey))
-    console.log('==ethUtilPubKey', toHex(ethUtilPubKey))
+
     const pubKey = secp256k1.getPublicKey(privateKey.slice(2), false)
-    console.log('==mypubKey', toHex(pubKey))
-    // const temp = new BigNumber(toHex(pubKey))
-    // const asn1Key = asn1FromPublicKey(temp)
     const asn1Key = asn1FromPublicKey(toHex(pubKey))
     const prefix = '-----BEGIN PUBLIC KEY-----\n'
     const postfix = '-----END PUBLIC KEY-----\n'
@@ -139,34 +108,15 @@ const mockKmsClient = {
     name: string
     digest: { sha256: Buffer }
   }) => {
-    const privateKey = keys.get(name)
+    const privateKey = MOCK_KEYS.get(name)
     if (!privateKey) {
       throw new Error(`Unable to locate key: ${name}`)
     }
 
-    // const pkBuffer = Buffer.from(privateKey, 'hex')
-    // const signature = ec.sign(digest.sha256, pkBuffer, { canonical: true })
-    // return [{ signature: Buffer.from(signature.toDER()) }]
     const signature = secp256k1.sign(digest.sha256, privateKey.slice(2))
     const signatureWithoutRecovery = new secp256k1.Signature(
       signature.r,
       signature.s,
-    )
-    console.log('==signature', signature, signature.toDERHex())
-    console.log(
-      '==signatureWithoutRecovery',
-      signatureWithoutRecovery,
-      signatureWithoutRecovery.toDERHex(),
-    )
-    console.log(
-      '==equal',
-      signature.toDERHex() === signatureWithoutRecovery.toDERHex(),
-    )
-
-    console.log('===ACCOUNT_PUBLIC_KEY1', ACCOUNT_PUBLIC_KEY1)
-    console.log(
-      '==recoveredPublicKey',
-      signature.recoverPublicKey(digest.sha256).toHex(false),
     )
 
     return [
@@ -176,23 +126,12 @@ const mockKmsClient = {
 } as unknown as KeyManagementServiceClient
 
 describe('gcpHsmToAccount', () => {
-  // let gcpHsmAccount: GcpHsmAccount
-  // // let knownAddress: string
-  // // const otherAddress: string = ACCOUNT_ADDRESS2
-
-  // beforeEach(async () => {
-  //   gcpHsmAccount = await gcpHsmToAccount({
-  //     hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
-  //     kmsClient: mockKmsClient,
-  //   })
-  // })
-
   it('returns a valid viem account when given a known hsm key', async () => {
     const gcpHsmAccount = await gcpHsmToAccount({
       hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
       kmsClient: mockKmsClient,
     })
-    expect(gcpHsmAccount.address).toBe(ACCOUNT_ADDRESS1)
+    expect(gcpHsmAccount.address).toBe(ACCOUNT1.address)
     expect(gcpHsmAccount.type).toBe('local')
     expect(gcpHsmAccount.source).toBe('gcpHsm')
   })
@@ -220,124 +159,55 @@ describe('gcpHsmToAccount', () => {
       it('succeeds', async () => {
         const message = 'hello world'
         const signature = await gcpHsmAccount.signMessage({ message })
-        expect(signature).not.toBeUndefined()
+
+        expect(signature).toBe(
+          '0x08c183d08a952dcd603148842de1d7844a1a6d72a3761840ebe10a570240821e3348c9296af823c8f4de5258f997fa35ee4ad8fce79cda929021f6976d0c10431c',
+        )
+        await expect(
+          verifyMessage({
+            address: ACCOUNT1.address,
+            message,
+            signature,
+          }),
+        ).resolves.toBeTruthy()
+      })
+    })
+
+    describe('signTransaction', () => {
+      it('succeeds', async () => {
+        const signedTx = await gcpHsmAccount.signTransaction({
+          chainId: 1,
+          maxFeePerGas: parseGwei('20'),
+          gas: 21000n,
+          to: ACCOUNT2.address,
+          value: parseEther('1'),
+        })
+
+        expect(signedTx).toBe(
+          '0x02f86f0180808504a817c80082520894588e4b68193001e4d10928660ab4165b813717c0880de0b6b3a764000080c080a045b0a758fd31e75c9f8558aa5eb2aee359693d781c2b2f8ef000d9bfefc8e3e7a004d6440b24582611c77b93113b5c6ac45d0ade91e8067ef8867a088e227be8d9',
+        )
+        await expect(
+          recoverTransactionAddress({
+            serializedTransaction: signedTx,
+          }),
+        ).resolves.toBe(ACCOUNT1.address)
+      })
+    })
+
+    describe('signTypedData', () => {
+      it('succeeds', async () => {
+        const signature = await gcpHsmAccount.signTypedData(TYPED_DATA)
+        expect(signature).toBe(
+          '0x51a454925c2ff4cad0a09cc64fc970685a17f39b2c3a843323f0cc08942d413d15e1ee8c7ff2e12e85eaf1f887cadfbb20b270a579f0945f30de2a73cad4d8ce1c',
+        )
+
+        await expect(
+          recoverTypedDataAddress({
+            ...TYPED_DATA,
+            signature,
+          }),
+        ).resolves.toBe(ACCOUNT1.address)
       })
     })
   })
-
-  // test('hasAccount should return false for keys that are not present', async () => {
-  //   expect(
-  //     await gcpHsmAccount.hasAccount('this is not a valid private key'),
-  //   ).toBeFalsy()
-  // })
-
-  // test('hasAccount should return true for keys that are present', async () => {
-  //   // Valid key should be present
-  //   const address =
-  //     await gcpHsmAccount.getAddressFromVersionName(MOCK_GCP_HSM_KEY_NAME)
-  //   expect(await gcpHsmAccount.hasAccount(address)).toBeTruthy()
-  // })
-
-  // test('throws on invalid key id', async () => {
-  //   try {
-  //     await gcpHsmAccount.getAddressFromVersionName('invalid')
-  //     throw new Error('expected error to have been thrown')
-  //   } catch (e: any) {
-  //     expect(e.message).toContain(
-  //       "3 INVALID_ARGUMENT: Resource name 'invalid' does not match pattern",
-  //     )
-  //   }
-  // })
-
-  /*describe('signing', () => {
-    let celoTransaction: CeloTx
-    // const unknownKey: string = '00000000-0000-0000-0000-000000000000'
-    // const unknownAddress = ACCOUNT_ADDRESS_NEVER
-
-    describe('using a known key', () => {
-      const knownKey: string = MOCK_GCP_HSM_KEY_NAME!
-      beforeEach(async () => {
-        // knownAddress = await gcpHsmAccount.getAddressFromVersionName(knownKey)
-        celoTransaction = {
-          from: knownAddress,
-          to: otherAddress,
-          chainId: CHAIN_ID,
-          value: Web3.utils.toWei('1', 'ether'),
-          nonce: 0,
-          gas: '10',
-          gasPrice: '99',
-          feeCurrency: '0x',
-          gatewayFeeRecipient: ACCOUNT_ADDRESS_NEVER,
-          gatewayFee: '0x5678',
-          data: '0xabcdef',
-        }
-      })
-
-      describe('when calling signTransaction', () => {
-        test('succeeds', async () => {
-          const signedTx: EncodedTransaction =
-            await gcpHsmAccount.signTransaction(celoTransaction)
-          expect(signedTx).not.toBeUndefined()
-        })
-        test('with same signer', async () => {
-          const signedTx: EncodedTransaction =
-            await gcpHsmAccount.signTransaction(celoTransaction)
-          const [, recoveredSigner] = recoverTransaction(signedTx.raw)
-          expect(normalizeAddressWith0x(recoveredSigner)).toBe(
-            normalizeAddressWith0x(knownAddress),
-          )
-        })
-        // https://github.com/ethereum/go-ethereum/blob/38aab0aa831594f31d02c9f02bfacc0bef48405d/rlp/decode.go#L664
-        test('signature with 0x00 prefix is canonicalized', async () => {
-          // This tx is carefully constructed to produce an S value with the first byte as 0x00
-          const celoTransactionZeroPrefix = {
-            from: await gcpHsmAccount.getAddressFromVersionName(knownKey),
-            to: ACCOUNT_ADDRESS2,
-            chainId: CHAIN_ID,
-            value: Web3.utils.toWei('1', 'ether'),
-            nonce: 65,
-            gas: '10',
-            gasPrice: '99',
-            feeCurrency: '0x',
-            gatewayFeeRecipient: ACCOUNT_ADDRESS_NEVER,
-            gatewayFee: '0x5678',
-            data: '0xabcdef',
-          }
-          const signedTx: EncodedTransaction =
-            await gcpHsmAccount.signTransaction(celoTransactionZeroPrefix)
-          expect(signedTx.tx.s.startsWith('0x00')).toBeFalsy()
-          const [, recoveredSigner] = recoverTransaction(signedTx.raw)
-          expect(normalizeAddressWith0x(recoveredSigner)).toBe(
-            normalizeAddressWith0x(knownAddress),
-          )
-        })
-      })
-
-      describe('when calling signPersonalMessage', () => {
-        test('succeeds', async () => {
-          const hexStr: string = ACCOUNT_ADDRESS1
-          const signedMessage = await gcpHsmAccount.signPersonalMessage(
-            knownAddress,
-            hexStr,
-          )
-          expect(signedMessage).not.toBeUndefined()
-          const valid = verifySignature(hexStr, signedMessage, knownAddress)
-          expect(valid).toBeTruthy()
-        })
-      })
-
-      describe('when calling signTypedData', () => {
-        test('succeeds', async () => {
-          const signedMessage = await gcpHsmAccount.signTypedData(TYPED_DATA)
-          expect(signedMessage).not.toBeUndefined()
-          const valid = verifyEIP712TypedDataSigner(
-            TYPED_DATA,
-            signedMessage,
-            knownAddress,
-          )
-          expect(valid).toBeTruthy()
-        })
-      })
-    })
-  })*/
 })
