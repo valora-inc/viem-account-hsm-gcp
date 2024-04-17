@@ -34,6 +34,7 @@
     "test:watch": "yarn test --watch",
     "test:ci": "yarn test --ci --coverage",
     "supercheck": "yarn format && yarn lint:fix && yarn typecheck && yarn knip && yarn test",
+    "send": "ts-node ./scripts/send.ts",
     "knip": "knip",
     "release": "semantic-release"
   },
