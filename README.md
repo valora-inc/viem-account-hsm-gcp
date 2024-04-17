@@ -46,7 +46,7 @@ const hash = await client.sendTransaction({
 > [!IMPORTANT]  
 > Make sure the key in [Google Cloud KMS](https://console.cloud.google.com/security/kms/keyrings) is a secp256k1 key.
 
-![gcp-key-creation](./docs/images/gcp-key-creation.png)
+<img src="./docs/images/gcp-key-creation.png" alt="gcp-key-creation" width="500"/>
 
 > [!TIP]
 > You don't have to use an HSM key, you can use a software key as well. See the [Google Cloud KMS documentation](https://cloud.google.com/kms/docs/algorithms#protection_levels) for more information.
