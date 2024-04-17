@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { gcpHsmToAccount } from '../src'
+import { gcpHsmToAccount } from '../src/gcpHsmToAccount'
 import {
   createWalletClient,
   formatUnits,

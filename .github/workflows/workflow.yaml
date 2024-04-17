@@ -62,35 +62,39 @@ jobs:
       #     path: coverage/lcov-report
       # - name: 'Upload coverage to Codecov'
       #   uses: codecov/codecov-action@v3
-  deploy:
-    name: Deploy
+  publish:
+    name: Publish to NPM
     if: github.ref == 'refs/heads/main'
     needs:
+      - check-for-sh
       - lint
       - knip
       - test
     runs-on: ubuntu-latest
     steps:
-      # Repo needs to be given access to the MAINNET_SERVICE_ACCOUNT_KEY secret to access the slack webhook
-      # https://github.com/organizations/valora-inc/settings/secrets/actions/MAINNET_SERVICE_ACCOUNT_KEY
-      - uses: google-github-actions/auth@v2
-        with:
-          project_id: celo-mobile-mainnet
-          credentials_json: ${{ secrets.MAINNET_SERVICE_ACCOUNT_KEY }}
-      - name: Fetch Secrets
-        id: slack-webhook
-        uses: google-github-actions/get-secretmanager-secrets@v2.1.0
-        with:
-          # This can point to any slack webhook URL stored in GC Secret Manager
-          secrets: |-
-            SLACK_WEBHOOK_URL:projects/1027349420744/secrets/SLACK_ONCALL_WEBHOOK_URL
+      # actions/checkout MUST come before auth
       - uses: actions/checkout@v4
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          # From valora-viem-hsm-test
+          credentials_json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
+      - id: google-secrets
+        uses: google-github-actions/get-secretmanager-secrets@v2
+        with:
+          secrets: |-
+            NPM_TOKEN:valora-viem-hsm-test/NPM_TOKEN
+            SLACK_WEBHOOK_URL:valora-viem-hsm-test/SLACK_ONCALL_WEBHOOK_URL
       - uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
           check-latest: true
       - run: yarn
-      - run: yarn deploy
+      - run: yarn build
+      - run: yarn release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: ${{ steps.google-secrets.outputs.NPM_TOKEN }}
       - uses: ravsamhq/notify-slack-action@v2
         if: always()
         with:
@@ -103,4 +107,4 @@ jobs:
           mention_groups: 'S0277QUM4KB'
           mention_groups_when: 'failure'
         env:
-          SLACK_WEBHOOK_URL: ${{ steps.slack-webhook.outputs.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_URL: ${{ steps.google-secrets.outputs.SLACK_WEBHOOK_URL }}
