@@ -113,7 +113,7 @@ async function sign(
   return {
     r: toHex(r),
     s: toHex(s),
-    v: BigInt(recovery + 27),
+    v: BigInt(recovery) + 27n,
     yParity: recovery,
   }
 }
