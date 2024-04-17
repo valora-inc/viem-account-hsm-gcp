@@ -2,15 +2,8 @@ import { KeyManagementServiceClient } from '@google-cloud/kms'
 import * as asn1 from 'asn1js'
 import { LocalAccount, publicKeyToAddress, toAccount } from 'viem/accounts'
 import {
-  GetTransactionType,
   Hex,
-  SerializeTransactionFn,
-  SignableMessage,
   Signature,
-  TransactionSerializable,
-  TransactionSerialized,
-  TypedData,
-  TypedDataDefinition,
   hashMessage,
   hashTypedData,
   hexToBytes,
@@ -92,7 +85,6 @@ async function getRecoveredSignature(
   publicKey: Hex,
   hash: Uint8Array,
 ): Promise<RecoveredSignatureType> {
-  console.log('publickey length', publicKey.length)
   for (let i = 0; i < 4; i++) {
     const recoveredSig = signature.addRecoveryBit(i)
     const compressed = publicKey.length < UNCOMPRESSED_PUBLIC_KEY_HEX_LENGTH
@@ -126,105 +118,6 @@ async function sign(
   }
 }
 
-type SignTransactionParameters<
-  serializer extends
-    SerializeTransactionFn<TransactionSerializable> = SerializeTransactionFn<TransactionSerializable>,
-  transaction extends Parameters<serializer>[0] = Parameters<serializer>[0],
-> = {
-  kmsClient: KeyManagementServiceClient
-  hsmKeyVersion: string
-  publicKey: Hex
-  transaction: transaction
-  serializer?: serializer | undefined
-}
-
-type SignTransactionReturnType<
-  serializer extends
-    SerializeTransactionFn<TransactionSerializable> = SerializeTransactionFn<TransactionSerializable>,
-  transaction extends Parameters<serializer>[0] = Parameters<serializer>[0],
-> = TransactionSerialized<GetTransactionType<transaction>>
-
-async function signTransaction<
-  serializer extends
-    SerializeTransactionFn<TransactionSerializable> = SerializeTransactionFn<TransactionSerializable>,
-  transaction extends Parameters<serializer>[0] = Parameters<serializer>[0],
->(
-  parameters: SignTransactionParameters<serializer, transaction>,
-): Promise<SignTransactionReturnType<serializer, transaction>> {
-  const {
-    kmsClient,
-    hsmKeyVersion,
-    publicKey,
-    transaction,
-    serializer = serializeTransaction,
-  } = parameters
-
-  const signableTransaction = (() => {
-    // For EIP-4844 Transactions, we want to sign the transaction payload body (tx_payload_body) without the sidecars (ie. without the network wrapper).
-    // See: https://github.com/ethereum/EIPs/blob/e00f4daa66bd56e2dbd5f1d36d09fd613811a48b/EIPS/eip-4844.md#networking
-    if (transaction.type === 'eip4844')
-      return {
-        ...transaction,
-        sidecars: false,
-      }
-    return transaction
-  })()
-
-  const hash = keccak256(serializer(signableTransaction))
-  const signature = await sign(kmsClient, hsmKeyVersion, publicKey, hash)
-
-  return serializer(transaction, signature) as SignTransactionReturnType<
-    serializer,
-    transaction
-  >
-}
-
-type SignMessageParameters = {
-  message: SignableMessage
-  kmsClient: KeyManagementServiceClient
-  hsmKeyVersion: string
-  publicKey: Hex
-}
-
-async function signMessage({
-  message,
-  kmsClient,
-  hsmKeyVersion,
-  publicKey,
-}: SignMessageParameters): Promise<Hex> {
-  const signature = await sign(
-    kmsClient,
-    hsmKeyVersion,
-    publicKey,
-    hashMessage(message),
-  )
-  return signatureToHex(signature)
-}
-
-type SignTypedDataParameters<
-  typedData extends TypedData | Record<string, unknown> = TypedData,
-  primaryType extends keyof typedData | 'EIP712Domain' = keyof typedData,
-> = TypedDataDefinition<typedData, primaryType> & {
-  kmsClient: KeyManagementServiceClient
-  hsmKeyVersion: string
-  publicKey: Hex
-}
-
-async function signTypedData<
-  const typedData extends TypedData | Record<string, unknown>,
-  primaryType extends keyof typedData | 'EIP712Domain',
->(parameters: SignTypedDataParameters<typedData, primaryType>): Promise<Hex> {
-  const { kmsClient, hsmKeyVersion, publicKey, ...typedData } =
-    parameters as unknown as SignTypedDataParameters
-  const signature = await sign(
-    kmsClient,
-    hsmKeyVersion,
-    publicKey,
-    hashTypedData(typedData),
-  )
-  return signatureToHex(signature)
-}
-
 export async function gcpHsmToAccount({
   hsmKeyVersion,
   kmsClient: kmsClient_,
@@ -239,24 +132,42 @@ export async function gcpHsmToAccount({
   const account = toAccount({
     address,
     async signMessage({ message }) {
-      return signMessage({ message, kmsClient, hsmKeyVersion, publicKey })
-    },
-    async signTransaction(transaction, { serializer } = {}) {
-      return signTransaction({
+      const signature = await sign(
         kmsClient,
         hsmKeyVersion,
         publicKey,
-        transaction,
-        serializer,
-      })
+        hashMessage(message),
+      )
+      return signatureToHex(signature)
+    },
+    async signTransaction(
+      transaction,
+      { serializer = serializeTransaction } = {},
+    ) {
+      const signableTransaction = (() => {
+        // For EIP-4844 Transactions, we want to sign the transaction payload body (tx_payload_body) without the sidecars (ie. without the network wrapper).
+        // See: https://github.com/ethereum/EIPs/blob/e00f4daa66bd56e2dbd5f1d36d09fd613811a48b/EIPS/eip-4844.md#networking
+        if (transaction.type === 'eip4844')
+          return {
+            ...transaction,
+            sidecars: false,
+          }
+        return transaction
+      })()
+
+      const hash = keccak256(serializer(signableTransaction))
+      const signature = await sign(kmsClient, hsmKeyVersion, publicKey, hash)
+
+      return serializer(transaction, signature)
     },
     async signTypedData(typedData) {
-      return signTypedData({
-        ...typedData,
+      const signature = await sign(
         kmsClient,
         hsmKeyVersion,
         publicKey,
-      })
+        hashTypedData(typedData),
+      )
+      return signatureToHex(signature)
     },
   })
 
