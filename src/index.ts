@@ -31,8 +31,8 @@ async function getPublicKey(
   if (!pk.pem) {
     throw new Error('PublicKey pem is not defined')
   }
-  const derEncodedPk = pemToDerEncode(pk.pem)
-  return publicKeyFromAsn1(Buffer.from(derEncodedPk, 'base64'))
+  const derEncodedPk = pemToDer(pk.pem)
+  return publicKeyFromDer(derEncodedPk)
 }
 
 /**
@@ -43,11 +43,13 @@ async function getPublicKey(
  *
  * https://www.ssl.com/guide/pem-der-crt-and-cer-x-509-encodings-and-conversions/#:~:text=DER%20(Distinguished%20Encoding%20Rules)%20is,commonly%20seen%20in%20Java%20contexts.
  */
-function pemToDerEncode(pem: string): string {
-  return pem.split('\n').slice(1, -2).join('').trim()
+function pemToDer(pem: string): Uint8Array {
+  const base64 = pem.split('\n').slice(1, -2).join('').trim()
+  return Buffer.from(base64, 'base64')
 }
 
-function publicKeyFromAsn1(bytes: Uint8Array): Hex {
+function publicKeyFromDer(bytes: Uint8Array): Hex {
+  // DER is a subset of BER (Basic Encoding Rules)
   const { result } = asn1.fromBER(bytes)
   const values = (result as asn1.Sequence).valueBlock.value
   if (values.length < 2) {

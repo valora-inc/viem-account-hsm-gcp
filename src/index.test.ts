@@ -66,7 +66,7 @@ const MOCK_KEYS: Map<string, string> = new Map([
   [MOCK_GCP_HSM_KEY_NAME, PRIVATE_KEY1],
 ])
 
-function asn1FromPublicKey(publicKey: Hex): Buffer {
+function derFromPublicKey(publicKey: Hex): Buffer {
   const sequence = new asn1.Sequence()
   const values = sequence.valueBlock.value
   for (const i of [0, 1]) {
@@ -89,8 +89,8 @@ const mockKmsClient = {
     }
 
     const pubKey = secp256k1.getPublicKey(privateKey.slice(2), false)
-    const asn1Key = asn1FromPublicKey(toHex(pubKey))
-    const pem = `-----BEGIN PUBLIC KEY-----\n${asn1Key
+    const derKey = derFromPublicKey(toHex(pubKey))
+    const pem = `-----BEGIN PUBLIC KEY-----\n${derKey
       .toString('base64')
       .match(/.{0,64}/g)!
       .join('\n')}-----END PUBLIC KEY-----\n`
