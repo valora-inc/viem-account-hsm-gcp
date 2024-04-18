@@ -82,9 +82,10 @@ jobs:
       - id: google-secrets
         uses: google-github-actions/get-secretmanager-secrets@v2
         with:
+          # valora-viem-hsm-test service account has access to these specific secrets
           secrets: |-
-            NPM_TOKEN:valora-viem-hsm-test/NPM_TOKEN
-            SLACK_WEBHOOK_URL:valora-viem-hsm-test/SLACK_ONCALL_WEBHOOK_URL
+            NPM_TOKEN:celo-mobile-mainnet/NPM_TOKEN
+            SLACK_WEBHOOK_URL:celo-mobile-mainnet/SLACK_ONCALL_WEBHOOK_URL
       - uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
