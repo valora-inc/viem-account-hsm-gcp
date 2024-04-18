@@ -1,5 +1,5 @@
 {
-  "entry": ["src/index.ts"],
+  "entry": ["src/index.ts", "scripts/**/*.ts"],
   "project": ["src/**/*/.ts"],
   "ignoreDependencies": [
     "@types/jest",
