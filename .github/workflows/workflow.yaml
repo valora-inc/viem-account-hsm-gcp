@@ -68,6 +68,8 @@ jobs:
           path: coverage/lcov-report
       - name: 'Upload coverage to Codecov'
         uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
   publish:
     name: Publish to NPM
     if: github.ref == 'refs/heads/main'
