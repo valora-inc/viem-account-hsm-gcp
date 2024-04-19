@@ -75,6 +75,7 @@
     "preset": "conventionalcommits"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
