@@ -14,7 +14,7 @@ Use a Google Cloud HSM key to sign transactions with [viem](https://viem.sh/).
 yarn add @valora/viem-account-hsm-gcp
 ```
 
-Note: viem is a peer dependency, so make it sure it's installed in your project.
+Note: viem is a peer dependency, so make sure it's installed in your project.
 
 ## Using the library
 
