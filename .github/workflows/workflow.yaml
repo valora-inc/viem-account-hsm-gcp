@@ -62,12 +62,12 @@ jobs:
           check-latest: true
       - run: yarn
       - run: yarn test:ci
-      # - name: Upload Coverage Report
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     path: coverage/lcov-report
-      # - name: 'Upload coverage to Codecov'
-      #   uses: codecov/codecov-action@v3
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          path: coverage/lcov-report
+      - name: 'Upload coverage to Codecov'
+        uses: codecov/codecov-action@v4
   publish:
     name: Publish to NPM
     if: github.ref == 'refs/heads/main'
