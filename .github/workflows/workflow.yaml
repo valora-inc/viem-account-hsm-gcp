@@ -50,6 +50,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      # Auth so e2e tests can access Google services
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          # From valora-viem-hsm-test
+          credentials_json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
       - uses: actions/setup-node@v4
         with:
           node-version-file: 'package.json'
