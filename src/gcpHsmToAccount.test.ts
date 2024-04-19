@@ -12,7 +12,7 @@ import {
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import * as asn1 from 'asn1js'
-import { gcpHsmToAccount } from './index'
+import { gcpHsmToAccount } from './gcpHsmToAccount'
 
 const PRIVATE_KEY1 =
   '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
