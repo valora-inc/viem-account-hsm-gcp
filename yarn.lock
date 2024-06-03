@@ -4842,10 +4842,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-knip@^5.16.0:
-  version "5.17.0"
-  resolved "https://registry.yarnpkg.com/knip/-/knip-5.17.0.tgz#db548c7b7fa5af5a864bd57aee920d7c4fc72c55"
-  integrity sha512-6+tqWEMTSc/Sdix3l2gk6qt3Ighogo5CzabzqMRyVHlJnPqkikF6ppcTPs7ncJtq3leGJRHPMxEboQFblKdg5g==
+knip@^5.17.3:
+  version "5.17.3"
+  resolved "https://registry.yarnpkg.com/knip/-/knip-5.17.3.tgz#eb2c285bc513e679917fdddeb54842b90cd90299"
+  integrity sha512-x2paKB0BOzFjnetYolGwg9Dwa8ZIYwBuVP2V4bWRFfTeLs7BymARb7I00R3OCbr09gKKr8TPLQVx2GQ6RF9llQ==
   dependencies:
     "@ericcornelissen/bash-parser" "0.5.2"
     "@nodelib/fs.walk" "2.0.0"
@@ -7380,10 +7380,10 @@ validate-npm-package-name@^5.0.0:
   dependencies:
     builtins "^5.0.0"
 
-viem@^2.12.1:
-  version "2.12.5"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-2.12.5.tgz#b30888367c193ca3ab1bc2864a9723ac3f10ba87"
-  integrity sha512-OHS+356v/ykkQMWEhefDRa5aC3iM3wEzdBlPoAhkCilsXRTAyy0YofYZ9hZG8SyM+0Ltl01j5EyJHqo0o62Czg==
+viem@^2.13.2:
+  version "2.13.3"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-2.13.3.tgz#950426e4cacf5e12fab2c202a339371901712481"
+  integrity sha512-3tlwDRKHSelupFjbFMdUxF41f79ktyH2F9PAQ9Dltbs1DpdDlR1x+Ksa0th6qkyjjAbpDZP3F5nMTJv/1GVPdQ==
   dependencies:
     "@adraffy/ens-normalize" "1.10.0"
     "@noble/curves" "1.2.0"
