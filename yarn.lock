@@ -1653,10 +1653,10 @@ abbrev@^2.0.0:
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-2.0.0.tgz#cf59829b8b4f03f89dda2771cb7f3653828c89bf"
   integrity sha512-6/mh1E2u2YgEsCHdY0Yx5oW+61gZU+1vXaoiHHrpKeuRNNgFvS+/jrwHiQhB5apAf5oB7UB7E19ol2R2LKH8hQ==
 
-abitype@1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/abitype/-/abitype-1.0.0.tgz#237176dace81d90d018bebf3a45cb42f2a2d9e97"
-  integrity sha512-NMeMah//6bJ56H5XRj8QCV4AwuW6hB6zqz2LnhhLdcWVQOsXki6/Pn3APeqxCma62nXIcmZWdu1DlHWS74umVQ==
+abitype@1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/abitype/-/abitype-1.0.4.tgz#a817ff44860e8a84e9a37ed22aa9b738dbb51dba"
+  integrity sha512-UivtYZOGJGE8rsrM/N5vdRkUpqEZVmuTumfTuolm7m/6O09wprd958rx8kUBwVAAAhQDveGAgD0GJdBuR8s6tw==
 
 abort-controller@^3.0.0:
   version "3.0.0"
@@ -3234,13 +3234,6 @@ figures@^6.0.0, figures@^6.1.0:
   dependencies:
     is-unicode-supported "^2.0.0"
 
-file-entry-cache@8.0.0:
-  version "8.0.0"
-  resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-8.0.0.tgz#7787bddcf1131bffb92636c69457bbc0edd6d81f"
-  integrity sha512-XXTUwCvisa5oacNGRP9SfNtYBNAMi+RPwBFmblZEF7N7swHYQS6/Zfk7SRwx4D5j3CH211YNRco1DEMNVfZCnQ==
-  dependencies:
-    flat-cache "^4.0.0"
-
 file-entry-cache@^6.0.1:
   version "6.0.1"
   resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-6.0.1.tgz#211b2dd9659cb0394b073e7323ac3c933d522027"
@@ -3304,15 +3297,7 @@ flat-cache@^3.0.4:
     flatted "^3.1.0"
     rimraf "^3.0.2"
 
-flat-cache@^4.0.0:
-  version "4.0.1"
-  resolved "https://registry.yarnpkg.com/flat-cache/-/flat-cache-4.0.1.tgz#0ece39fcb14ee012f4b0410bd33dd9c1f011127c"
-  integrity sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==
-  dependencies:
-    flatted "^3.2.9"
-    keyv "^4.5.4"
-
-flatted@^3.1.0, flatted@^3.2.9:
+flatted@^3.1.0:
   version "3.3.1"
   resolved "https://registry.yarnpkg.com/flatted/-/flatted-3.3.1.tgz#21db470729a6734d4997002f439cb308987f567a"
   integrity sha512-X8cqMLLie7KsNUDSdzeN8FYK9rEt4Dt67OsG/DNGnYTSDBG4uFAJFBnUeiV+zCVAvwFy56IjM9sH51jVaEhNxw==
@@ -4693,11 +4678,6 @@ json-bigint@^1.0.0:
   dependencies:
     bignumber.js "^9.0.0"
 
-json-buffer@3.0.1:
-  version "3.0.1"
-  resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
-  integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
-
 json-parse-better-errors@^1.0.1:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/json-parse-better-errors/-/json-parse-better-errors-1.0.2.tgz#bb867cfb3450e69107c131d1c514bab3dc8bcaa9"
@@ -4789,29 +4769,21 @@ jws@^4.0.0:
     jwa "^2.0.0"
     safe-buffer "^5.0.1"
 
-keyv@^4.5.4:
-  version "4.5.4"
-  resolved "https://registry.yarnpkg.com/keyv/-/keyv-4.5.4.tgz#a879a99e29452f942439f2a405e3af8b31d4de93"
-  integrity sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==
-  dependencies:
-    json-buffer "3.0.1"
-
 kleur@^3.0.3:
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-knip@^5.19.0:
-  version "5.20.0"
-  resolved "https://registry.yarnpkg.com/knip/-/knip-5.20.0.tgz#4cac21098472d438b3e619ed7d95691407bcd67c"
-  integrity sha512-pQ8fJ6Be7dVsKIqEW06g8TOjiTW9knQPkN0hg2fQTY/Jw16L3EmngAx6cg+5pVLpyxo2wVChCUAn93/ATcatIA==
+knip@^5.22.2:
+  version "5.22.2"
+  resolved "https://registry.yarnpkg.com/knip/-/knip-5.22.2.tgz#6db1f1c0e066d65ad24c55602ea016f730dad96c"
+  integrity sha512-eMEnuLOkLN5wn1Os9v0cujZQAhcZ8dYZ23ZsVizfWaaeIx9/s8PaaW4HlbnePQ+ci463X61/+CboGSkmmB8OZA==
   dependencies:
     "@ericcornelissen/bash-parser" "0.5.3"
     "@nodelib/fs.walk" "2.0.0"
     "@snyk/github-codeowners" "1.1.0"
     easy-table "1.2.0"
     fast-glob "^3.3.2"
-    file-entry-cache "8.0.0"
     jiti "^1.21.0"
     js-yaml "^4.1.0"
     minimist "^1.2.8"
@@ -7340,19 +7312,19 @@ validate-npm-package-name@^5.0.0:
   dependencies:
     builtins "^5.0.0"
 
-viem@^2.14.0:
-  version "2.14.2"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-2.14.2.tgz#ddc91f927bbe6dbedc87b687ccd17c08be7e2dbd"
-  integrity sha512-dQY3dmeKY0av7p1zVvqBYYsFzNhMmnxOtBA3ttS2SFRJHs4r8EdF4L9xW0rJ6tMyUwSlpeHxJ4kP+S+uCuoyGQ==
+viem@^2.16.0:
+  version "2.16.1"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-2.16.1.tgz#6be85ab69e2948d878d7b42f5d0e22333a8f6b33"
+  integrity sha512-rmgXcxif740m2ARqPFoiXRHkljXhsruCZgRXf6XuS6n+Lymy7X2ma5vuzBw3mDKiA2BmxjbyJC4Wxi7kaIwHhw==
   dependencies:
     "@adraffy/ens-normalize" "1.10.0"
     "@noble/curves" "1.2.0"
     "@noble/hashes" "1.3.2"
     "@scure/bip32" "1.3.2"
     "@scure/bip39" "1.2.1"
-    abitype "1.0.0"
+    abitype "1.0.4"
     isows "1.0.4"
-    ws "8.13.0"
+    ws "8.17.1"
 
 vlq@^0.2.1:
   version "0.2.3"
@@ -7515,10 +7487,10 @@ write-file-atomic@^5.0.0, write-file-atomic@^5.0.1:
     imurmurhash "^0.1.4"
     signal-exit "^4.0.1"
 
-ws@8.13.0:
-  version "8.13.0"
-  resolved "https://registry.yarnpkg.com/ws/-/ws-8.13.0.tgz#9a9fb92f93cf41512a0735c8f4dd09b8a1211cd0"
-  integrity sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==
+ws@8.17.1:
+  version "8.17.1"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.17.1.tgz#9293da530bb548febc95371d90f9c878727d919b"
+  integrity sha512-6XQFvXTkbfUOZOKKILFG1PDK2NDQs4azKQl26T0YS5CxqWLgXajbPZ+h4gZekJyRqFU8pvnbAbbs/3TgRPy+GQ==
 
 xtend@~4.0.1:
   version "4.0.2"
