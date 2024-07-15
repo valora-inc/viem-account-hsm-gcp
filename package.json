@@ -50,7 +50,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.12",
     "@types/shelljs": "^0.8.15",
-    "@typescript-eslint/eslint-plugin": "^7.15.0",
+    "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@valora/eslint-config-typescript": "^1.0.2",
     "@valora/prettier-config": "^0.0.1",
     "conventional-changelog-conventionalcommits": "^8.0.0",
