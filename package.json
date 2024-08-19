@@ -68,7 +68,7 @@
     "ts-jest": "^29.2.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
-    "viem": "^2.19.3"
+    "viem": "^2.19.6"
   },
   "prettier": "@valora/prettier-config",
   "release": {
