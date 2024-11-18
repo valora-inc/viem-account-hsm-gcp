@@ -4696,10 +4696,10 @@ kleur@^3.0.3:
   resolved "https://registry.yarnpkg.com/kleur/-/kleur-3.0.3.tgz#a79c9ecc86ee1ce3fa6206d1216c501f147fc07e"
   integrity sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==
 
-knip@^5.36.3:
-  version "5.36.5"
-  resolved "https://registry.yarnpkg.com/knip/-/knip-5.36.5.tgz#58f3bdebc5e4b09892da5d593f1505c7f0f93d45"
-  integrity sha512-SKfT9ae69ldqM8fwdhDU4CGtH9T8WXtRFqiJlzd9GdxRUebkktdDB7XayJvHP/1HbSWUrjAG7CQHa78pwjoftw==
+knip@^5.37.0:
+  version "5.37.1"
+  resolved "https://registry.yarnpkg.com/knip/-/knip-5.37.1.tgz#3c3e91c425dfb35be68b4d12cc0b9ee3cde794e8"
+  integrity sha512-69gjKj5lLsLXcIPXlHyFfX5AOHgRdh/iXH8gUqvmsHtjqoWhOATeXZDjvvemmgw7KxbWbUzxBNbpjhtJWzgqGA==
   dependencies:
     "@nodelib/fs.walk" "1.2.8"
     "@snyk/github-codeowners" "1.1.0"
@@ -7169,10 +7169,10 @@ validate-npm-package-name@^5.0.0:
   dependencies:
     builtins "^5.0.0"
 
-viem@^2.21.43:
-  version "2.21.44"
-  resolved "https://registry.yarnpkg.com/viem/-/viem-2.21.44.tgz#793600a6afa8c0c1d62b4b819d036f833f623195"
-  integrity sha512-oyLTCt7OQUetQN2m9KPNgSA//MzpnQLABAyglPKh+fAypU8cTT/hC5UyLQvaYt4WPg6dkbKOxfsahV4739pu9w==
+viem@^2.21.45:
+  version "2.21.47"
+  resolved "https://registry.yarnpkg.com/viem/-/viem-2.21.47.tgz#f518baeb73f1aa801ac0dbf7b5c30ee6c4031cb0"
+  integrity sha512-Bpj+DUlt0A3AOc5vQz7h+YWcwOfNHryIzhIb6iQv9bNZXVVLtADv4l338to6IglXDjnXhDqfVUGo8PeAL92vug==
   dependencies:
     "@noble/curves" "1.6.0"
     "@noble/hashes" "1.5.0"
