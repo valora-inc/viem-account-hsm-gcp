@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "@google-cloud/kms": "^4.5.0",
-    "@noble/curves": "^1.6.0",
+    "@noble/curves": "^1.7.0",
     "asn1js": "^3.0.5"
   },
   "devDependencies": {
