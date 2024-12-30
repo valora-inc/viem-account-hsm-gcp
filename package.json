@@ -51,7 +51,7 @@
     "@types/jest": "^29.5.14",
     "@types/shelljs": "^0.8.15",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@valora/eslint-config-typescript": "^1.1.1",
+    "@valora/eslint-config-typescript": "^1.1.2",
     "@valora/prettier-config": "^0.0.1",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^8.57.1",
@@ -68,7 +68,7 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.7.2",
-    "viem": "^2.21.56"
+    "viem": "^2.21.57"
   },
   "prettier": "@valora/prettier-config",
   "release": {
