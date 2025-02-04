@@ -8,6 +8,7 @@ import {
   recoverTransactionAddress,
   recoverTypedDataAddress,
   toHex,
+  verifyHash,
   verifyMessage,
 } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
@@ -87,6 +88,7 @@ describe('gcpHsmToAccount', () => {
       address: ACCOUNT1.address,
       publicKey: ACCOUNT1.publicKey,
       signMessage: expect.any(Function),
+      sign: expect.any(Function),
       signTransaction: expect.any(Function),
       signTypedData: expect.any(Function),
       source: 'gcpHsm',
@@ -120,6 +122,28 @@ describe('gcpHsmToAccount', () => {
         address: ACCOUNT1.address,
         message,
         signature,
+      }),
+    ).resolves.toBeTruthy()
+  })
+
+  it('signs a hash', async () => {
+    const gcpHsmAccount = (await gcpHsmToAccount({
+      hsmKeyVersion: MOCK_GCP_HSM_KEY_NAME,
+      kmsClient: mockKmsClient,
+    })) as { sign: (params: { hash: Hex }) => Promise<Hex> }
+
+    const hash =
+      '0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68'
+    const signature = await gcpHsmAccount.sign({ hash })
+
+    expect(signature).toBe(
+      '0x08c183d08a952dcd603148842de1d7844a1a6d72a3761840ebe10a570240821e3348c9296af823c8f4de5258f997fa35ee4ad8fce79cda929021f6976d0c10431c',
+    )
+    await expect(
+      verifyHash({
+        address: ACCOUNT1.address,
+        hash: hash,
+        signature: signature,
       }),
     ).resolves.toBeTruthy()
   })
