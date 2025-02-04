@@ -3,6 +3,7 @@ import {
   parseGwei,
   recoverTransactionAddress,
   recoverTypedDataAddress,
+  verifyHash,
   verifyMessage,
 } from 'viem'
 import { TYPED_DATA } from '../test/values'
@@ -20,6 +21,7 @@ describe('gcpHsmToAccount', () => {
       address: '0x6AD01Ac6841b67f27DC1A039FefBF5804003d6a4',
       publicKey:
         '0x04b7ff0468ad921a192f9ad1eb8d979aacd1e27c86dccc5172fc48e587fb46e4520a52ddcfb10e8f48841fa758930a1e1f15dd12c51e1868f38ab1352d2ee9b132',
+      sign: expect.any(Function),
       signMessage: expect.any(Function),
       signTransaction: expect.any(Function),
       signTypedData: expect.any(Function),
@@ -51,6 +53,24 @@ describe('gcpHsmToAccount', () => {
         address: gcpHsmAccount.address,
         message,
         signature,
+      }),
+    ).resolves.toBeTruthy()
+  })
+
+  it('signs a hash', async () => {
+    const gcpHsmAccount = await gcpHsmToAccount({
+      hsmKeyVersion: GCP_HSM_KEY_NAME,
+    })
+
+    const hash =
+      '0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68'
+    const signature = await gcpHsmAccount.sign!({ hash })
+
+    await expect(
+      verifyHash({
+        address: gcpHsmAccount.address,
+        hash: hash,
+        signature: signature,
       }),
     ).resolves.toBeTruthy()
   })
