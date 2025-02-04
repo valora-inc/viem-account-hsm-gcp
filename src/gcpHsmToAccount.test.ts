@@ -132,7 +132,8 @@ describe('gcpHsmToAccount', () => {
       kmsClient: mockKmsClient,
     })) as { sign: (params: { hash: Hex }) => Promise<Hex> }
 
-    const hash = '0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68'
+    const hash =
+      '0xd9eba16ed0ecae432b71fe008c98cc872bb4cc214d3220a36f365326cf807d68'
     const signature = await gcpHsmAccount.sign({ hash })
 
     expect(signature).toBe(
@@ -146,7 +147,6 @@ describe('gcpHsmToAccount', () => {
       }),
     ).resolves.toBeTruthy()
   })
-
 
   it('signs a transaction', async () => {
     const gcpHsmAccount = await gcpHsmToAccount({

@@ -143,12 +143,7 @@ export async function gcpHsmToAccount({
       return signatureToHex(signature)
     },
     async sign({ hash }) {
-      const signature = await sign(
-        kmsClient,
-        hsmKeyVersion,
-        publicKey,
-        hash,
-      )
+      const signature = await sign(kmsClient, hsmKeyVersion, publicKey, hash)
       return signatureToHex(signature)
     },
     async signTransaction(
