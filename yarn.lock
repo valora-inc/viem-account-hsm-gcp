@@ -353,7 +353,7 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.57.1.tgz#de633db3ec2ef6a3c89e2f19038063e8a122e2c2"
   integrity sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==
 
-"@google-cloud/kms@^5.0.0":
+"@google-cloud/kms@^5.0.1":
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/@google-cloud/kms/-/kms-5.0.1.tgz#ae139ae601e4c08219ff4d814b2ec4c1e76a3ce4"
   integrity sha512-q72Sao+X+/DioGVlvzDzm6NTBAWuVJ3/OKccGQEfIszKyzLVkepSqi6ZSZtv9uPbM3CAe3QVFsEhGvrzRJmduA==
