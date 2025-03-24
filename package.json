@@ -51,7 +51,7 @@
     "@types/jest": "^29.5.14",
     "@types/shelljs": "^0.8.15",
     "@typescript-eslint/eslint-plugin": "^7.18.0",
-    "@valora/eslint-config-typescript": "^1.1.13",
+    "@valora/eslint-config-typescript": "^1.1.14",
     "@valora/prettier-config": "^0.0.1",
     "conventional-changelog-conventionalcommits": "^8.0.0",
     "eslint": "^8.57.1",
@@ -64,11 +64,11 @@
     "knip": "^5.46.0",
     "prettier": "^3.5.3",
     "semantic-release": "^24.2.3",
-    "shelljs": "^0.9.1",
+    "shelljs": "^0.9.2",
     "ts-jest": "^29.2.6",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.2",
-    "viem": "^2.23.10"
+    "viem": "^2.23.13"
   },
   "prettier": "@valora/prettier-config",
   "release": {
