@@ -93,7 +93,7 @@ jobs:
           # From valora-viem-hsm-test
           credentials_json: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_KEY }}
       - id: google-secrets
-        uses: google-github-actions/get-secretmanager-secrets@2b5f97c5a4b9c105e64646762ad4fc3f5128e6f5 # v2.2.5
+        uses: google-github-actions/get-secretmanager-secrets@bc9c54b29fdffb8a47776820a7d26e77b379d262 # v3.0.0
         with:
           # valora-viem-hsm-test service account has access to these specific secrets
           secrets: |-
