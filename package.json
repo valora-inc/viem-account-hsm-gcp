@@ -43,7 +43,7 @@
     "viem": "^2.9.20"
   },
   "dependencies": {
-    "@google-cloud/kms": "^5.2.0",
+    "@google-cloud/kms": "^5.2.1",
     "@noble/curves": "^1.9.7",
     "asn1js": "^3.0.6"
   },
