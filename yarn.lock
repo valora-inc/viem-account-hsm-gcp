@@ -375,10 +375,10 @@
   resolved "https://registry.yarnpkg.com/@eslint/js/-/js-8.57.1.tgz#de633db3ec2ef6a3c89e2f19038063e8a122e2c2"
   integrity sha512-d9zaMRSTIKDLhctzH12MtXvJKSSUhaHcjV+2Z+GK+EEY7XKpP5yR4x+N3TAcHTcu963nIr+TMcCb4DBCYX1z6Q==
 
-"@google-cloud/kms@^5.2.0":
-  version "5.2.0"
-  resolved "https://registry.yarnpkg.com/@google-cloud/kms/-/kms-5.2.0.tgz#cc5e89152db1112b71dae7dc9dca998636776dca"
-  integrity sha512-Qvo3gsVGZ7g9Hr54GoKXgcI2SZ4xfXhgkuMGvgGBBVjYKyx3L+XAbbu7q+92dWJzQyvabNEO66L6MjDEl3N6WQ==
+"@google-cloud/kms@^5.2.1":
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/@google-cloud/kms/-/kms-5.2.1.tgz#b8bdb53d91ce1d09d3f8fdb71c03f4d239a2ebca"
+  integrity sha512-IE1HdWGymB7/gGtGbevbpHfZZSUT/xKmpJUWIJYJoJ1QHHYH5jdrl5jsIfMo8kyWAErP7nwgwU++LaUZBhXL9A==
   dependencies:
     google-gax "^5.0.0"
 
