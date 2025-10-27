@@ -83,7 +83,8 @@ jobs:
       contents: write # to be able to publish a GitHub release
       issues: write # to be able to comment on released issues
       pull-requests: write # to be able to comment on released pull requests
-      id-token: write # to enable use of OIDC for npm provenance
+      id-token: write # to enable use of OIDC for npm trusted publishing and provenance
+    environment: npm-publish # extra protection for publishing to npm
     steps:
       # actions/checkout MUST come before auth
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
@@ -97,7 +98,6 @@ jobs:
         with:
           # valora-viem-hsm-test service account has access to these specific secrets
           secrets: |-
-            NPM_TOKEN:celo-mobile-mainnet/NPM_TOKEN
             SLACK_WEBHOOK_URL:celo-mobile-mainnet/SLACK_ONCALL_WEBHOOK_URL
       - uses: actions/setup-node@2028fbc5c25fe9cf00d9f06a71cc4710d4507903 # v6.0.0
         with:
@@ -108,7 +108,6 @@ jobs:
       - run: yarn release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ steps.google-secrets.outputs.NPM_TOKEN }}
       - uses: ravsamhq/notify-slack-action@be814b201e233b2dc673608aa46e5447c8ab13f2 # 2.5.0
         if: always()
         with:
