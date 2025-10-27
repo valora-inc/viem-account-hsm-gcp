@@ -7,7 +7,7 @@ import {
   parseEther,
   publicActions,
 } from 'viem'
-import { celoAlfajores } from 'viem/chains'
+import { celo } from 'viem/chains'
 
 async function main() {
   const hsmKeyVersion =
@@ -19,7 +19,7 @@ async function main() {
 
   const client = createWalletClient({
     account: viemHsmAccount,
-    chain: celoAlfajores,
+    chain: celo,
     transport: http(),
   }).extend(publicActions)
 
