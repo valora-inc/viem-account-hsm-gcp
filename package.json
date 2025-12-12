@@ -45,7 +45,7 @@
   "dependencies": {
     "@google-cloud/kms": "^5.2.1",
     "@noble/curves": "^1.9.7",
-    "asn1js": "^3.0.6"
+    "asn1js": "^3.0.7"
   },
   "devDependencies": {
     "@types/jest": "^29.5.14",
